@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 
 class AuthController extends Controller
 {
@@ -16,6 +17,10 @@ class AuthController extends Controller
             'email' => 'required|string|email|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
         ]);
+
+        // obriši keš korisnika (ako postoji)
+        Cache::forget('user_'.$request->email);
+    
 
         $user = User::create([
             'name' => $request->name,
@@ -37,7 +42,12 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        // Keširaj korisnika 10 minuta
+        $user = Cache::remember('user_'.$request->email, 10*60, function() use ($request) {
+            return User::where('email', $request->email)->first();
+        });
+
+        
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             // Jasna greška u JSON formatu
