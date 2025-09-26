@@ -9,15 +9,15 @@ use Illuminate\Support\Facades\Schema;
 
 class ArtworkController extends Controller
 {
-    // GET /api/artworks?per_page=10&page=1
+    // GET /api/
     public function index(Request $request)
     {
         $perPage = (int) $request->query('per_page', 10);
-        $perPage = max(1, min(100, $perPage)); // ograniči između 1 i 100
+        $perPage = max(1, min(100, $perPage)); 
 
         $query = Artwork::query();
 
-        // Ako model ima relaciju author(), uključi je radi manje upita
+       
         if (method_exists(Artwork::class, 'author')) {
             $query->with('author');
         }
@@ -43,7 +43,7 @@ class ArtworkController extends Controller
         $request->validate([
             'naziv' => 'required|string|max:255',
             'opis'  => 'nullable|string',
-            // prihvati upload fajla (field: file) ili putanju (string)
+            // ovde prihvata upload fajla (field: file) ili putanju (string)
             'file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
             'file_path' => 'nullable|string|max:1000',
             'putanja' => 'nullable|string|max:1000',
@@ -54,10 +54,10 @@ class ArtworkController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        // obradi upload ako postoji
+        // obradjuje se  upload ako postoji
         $storedPath = null;
         if ($request->hasFile('file')) {
-            $storedPath = $request->file('file')->store('artworks', 'public'); // storage/app/public/artworks/...
+            $storedPath = $request->file('file')->store('artworks', 'public'); 
             // full URL (opciono): Storage::url($storedPath)
         } elseif ($request->filled('file_path')) {
             $storedPath = $request->input('file_path');
@@ -74,14 +74,14 @@ class ArtworkController extends Controller
             $artwork->user_id = $user->id;
         }
 
-        // setuj putanju u odgovarajucu kolonu (ako postoji)
+        // setuj putanju u odgovarajucu kolonu--sve ako postoji
         if ($storedPath !== null) {
             if (Schema::hasColumn('artworks', 'file_path')) {
                 $artwork->file_path = $storedPath;
             } elseif (Schema::hasColumn('artworks', 'putanja')) {
                 $artwork->putanja = $storedPath;
             } else {
-                // fallback: ako nema kolone, ne setuj (migrations treba da sadrže kolonu)
+                // fallback: ako nema kolone..ne setuje se (migrations treba da sadrze kolonu)
             }
         }
 
@@ -93,7 +93,7 @@ class ArtworkController extends Controller
         ], 201);
     }
 
-    // PUT/PATCH /api/artworks/{id}  (auth required)
+    // PUT/PATCH /api/artworks/{id}
     public function update(Request $request, Artwork $artwork)
     {
         $request->validate([
@@ -104,7 +104,7 @@ class ArtworkController extends Controller
             'putanja' => 'nullable|string|max:1000',
         ]);
 
-        // opcionalno: dozvoli update samo autoru (preporuka)
+        // opcionalno: dozvoli update samo autoru 
         if (Schema::hasColumn('artworks', 'user_id') && auth()->check()) {
             if ($artwork->user_id !== auth()->id()) {
                 return response()->json(['error' => 'Forbidden'], 403);
@@ -116,7 +116,7 @@ class ArtworkController extends Controller
 
         $storedPath = null;
         if ($request->hasFile('file')) {
-            // opcija: obriši stari fajl ako postoji
+            // opcija: da se brisw stari fajl ako postoji
             if (isset($artwork->file_path) && str_starts_with($artwork->file_path, 'artworks')) {
                 Storage::disk('public')->delete($artwork->file_path);
             }
@@ -143,7 +143,7 @@ class ArtworkController extends Controller
         ]);
     }
 
-    // DELETE /api/artworks/{id}  (auth required)
+    // DELETE /api/artworks/{id} 
     public function destroy(Request $request, Artwork $artwork)
     {
         // opcionalna provera vlasništva
