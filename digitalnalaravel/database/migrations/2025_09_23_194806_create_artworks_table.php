@@ -16,10 +16,18 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
         });
+
+        Schema::table('artworks', function (Blueprint $table) {
+            $table->text('naziv')->change();
+        });
     }
 
     public function down(): void
     {
         Schema::dropIfExists('artworks');
+
+        Schema::table('artworks', function (Blueprint $table) {
+            $table->string('naziv')->change();
+        });
     }
 };
