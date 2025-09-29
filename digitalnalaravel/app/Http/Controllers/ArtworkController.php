@@ -17,13 +17,19 @@ class ArtworkController extends Controller
 
         $query = Artwork::query();
 
-       
+        // Filtriranje po nazivu 
+        if ($request->filled('naziv')) {
+            $query->where('naziv', 'like', '%' . $request->naziv . '%');
+        }
+        // Filtriranje po user_id 
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
         if (method_exists(Artwork::class, 'author')) {
             $query->with('author');
         }
-
         $artworks = $query->paginate($perPage);
-
         return response()->json($artworks);
     }
 
