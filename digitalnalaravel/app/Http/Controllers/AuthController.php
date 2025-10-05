@@ -18,10 +18,13 @@ class AuthController extends Controller
             'password' => 'required|string|min:6|confirmed',
         ]);
 
-        // obriši keš korisnika (ako postoji)
-        Cache::forget('user_'.$request->email);
-    
+        // Kreiraj sigurniji keš ključ
+        $cacheKey = 'user_' . sha1(strtolower(trim($request->email)));
 
+        // Obriši keš ako već postoji
+        Cache::forget($cacheKey);
+
+        // Kreiraj novog korisnika
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -30,7 +33,8 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Korisnik registrovan!',
-            'user' => $user
+            // Vrati samo bezbedna polja
+            'user' => $user->only(['id', 'name', 'email']),
         ], 201);
     }
 
@@ -42,24 +46,27 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        // Sigurniji keš ključ
+        $cacheKey = 'user_' . sha1(strtolower(trim($request->email)));
+
         // Keširaj korisnika 10 minuta
-        $user = Cache::remember('user_'.$request->email, 10*60, function() use ($request) {
+        $user = Cache::remember($cacheKey, 10 * 60, function () use ($request) {
             return User::where('email', $request->email)->first();
         });
 
-        
-
+        // Ako korisnik ne postoji ili lozinka nije ispravna
         if (!$user || !Hash::check($request->password, $user->password)) {
-            // Jasna greška u JSON formatu
             return response()->json([
                 'error' => 'Pogrešan email ili lozinka.'
             ], 401);
         }
 
+        // Kreiraj novi token
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        // Vrati token (koristiš ga u Postmanu)
         return response()->json([
-            'message' => 'Uspesan login',
+            'message' => 'Uspešan login',
             'token' => $token
         ]);
     }
@@ -67,12 +74,19 @@ class AuthController extends Controller
     // POST /api/logout
     public function logout(Request $request)
     {
-        $request->user()->tokens()->delete();
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'error' => 'Neautorizovan zahtev.'
+            ], 401);
+        }
+
+        // Obriši sve aktivne tokene korisnika
+        $user->tokens()->delete();
 
         return response()->json([
             'message' => 'Izlogovani ste.'
         ]);
     }
 }
-
-
