@@ -6,6 +6,7 @@ use App\Models\Artwork;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Auth;
 
 class ArtworkController extends Controller
 {
@@ -21,7 +22,14 @@ class ArtworkController extends Controller
         if ($request->filled('naziv')) {
             $query->where('naziv', 'like', '%' . $request->naziv . '%');
         }
+        // Filtriranje po user_id 
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
 
+        if (method_exists(Artwork::class, 'author')) {
+            $query->with('author');
+        }
         $artworks = $query->paginate($perPage);
 
         return response()->json($artworks);
@@ -38,12 +46,13 @@ class ArtworkController extends Controller
         return response()->json($artwork);
     }
 
-    // POST /api/artworks
+    // POST /api/artworks  (auth required)
     public function store(Request $request)
     {
         $request->validate([
             'naziv' => 'required|string|max:255',
             'opis'  => 'nullable|string',
+            // ovde prihvata upload fajla (field: file) ili putanju (string)
             'file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
             'file_path' => 'nullable|string|max:1000',
             'putanja' => 'nullable|string|max:1000',
@@ -63,8 +72,13 @@ class ArtworkController extends Controller
         $artwork = new Artwork();
         $artwork->naziv = $request->naziv;
         $artwork->opis = $request->opis ?? null;
-        $artwork->user_id = $user->id; // IDOR zaštita
 
+        // postavi user_id ako postoji kolona
+        if (Schema::hasColumn('artworks', 'user_id')) {
+            $artwork->user_id = $user->id;
+        }
+
+        // setuj putanju u odgovarajucu kolonu--sve ako postoji
         if ($storedPath !== null) {
             if (Schema::hasColumn('artworks', 'file_path')) {
                 $artwork->file_path = $storedPath;
@@ -91,11 +105,18 @@ class ArtworkController extends Controller
 
         $request->validate([
             'naziv' => 'sometimes|required|string|max:255',
-            'opis'  => 'nullable|string',
+            'opis' => 'nullable|string',
             'file' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
             'file_path' => 'nullable|string|max:1000',
             'putanja' => 'nullable|string|max:1000',
         ]);
+
+        // opcionalno: dozvoli update samo autoru 
+        if (Schema::hasColumn('artworks', 'user_id') && Auth::check()) {
+            if ($artwork->user_id !== Auth::id()) {
+                return response()->json(['error' => 'Forbidden'], 403);
+            }
+        }
 
         if ($request->filled('naziv')) $artwork->naziv = $request->naziv;
         if ($request->filled('opis')) $artwork->opis = $request->opis;
@@ -131,9 +152,11 @@ class ArtworkController extends Controller
     // DELETE /api/artworks/{id}
     public function destroy(Request $request, Artwork $artwork)
     {
-        // IDOR zaštita: samo vlasnik može obrisati
-        if ($artwork->user_id !== $request->user()->id) {
-            return response()->json(['error' => 'Forbidden'], 403);
+        // opcionalna provera vlasništva
+        if (Schema::hasColumn('artworks', 'user_id') && Auth::check()) {
+            if ($artwork->user_id !== Auth::id()) {
+                return response()->json(['error' => 'Forbidden'], 403);
+            }
         }
 
         if (isset($artwork->file_path) && str_starts_with($artwork->file_path, 'artworks')) {
@@ -146,5 +169,17 @@ class ArtworkController extends Controller
         $artwork->delete();
 
         return response()->json(['message' => 'Artwork deleted']);
+    }
+
+    // Nested route: /artworks/{id}/images
+    public function images($id)
+    {
+        $artwork = Artwork::findOrFail($id);
+
+        if (method_exists($artwork, 'images')) {
+            return $artwork->images;
+        }
+
+        return []; // ako ne postoji relacija
     }
 }
