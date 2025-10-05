@@ -9,6 +9,9 @@ class Category extends Model
 {
     protected $fillable = ['name'];
 
+    public function artworks() {
+        return $this->hasMany(Artwork::class);
+    }
     public function images() {
         return $this->hasMany(Image::class);
     }

@@ -4,15 +4,11 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ArtworkController;
 use App\Http\Controllers\ImageController;
+use App\Http\Controllers\UserController;
 
-    // Public routes
-    Route::post('register', [AuthController::class, 'register']);
-
-    // Login sa rate limiting: max 5 pokušaja po minuti
-    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:5,1');
-
-    // Logout zaštićen tokenom
-    Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::post('register', [AuthController::class, 'register']);
+Route::post('login', [AuthController::class, 'login']);
+Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
 
     // Zaštićene rute sa auth middleware
@@ -29,3 +25,4 @@ use App\Http\Controllers\ImageController;
     Route::delete('images/{id}', [ImageController::class, 'destroy']);
     Route::get('images/external', [ImageController::class, 'fetchExternalImages']);
 });
+

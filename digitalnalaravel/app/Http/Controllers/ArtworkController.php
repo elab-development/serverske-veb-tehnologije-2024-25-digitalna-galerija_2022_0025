@@ -6,7 +6,6 @@ use App\Models\Artwork;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Auth;
 
 class ArtworkController extends Controller
 {
@@ -169,17 +168,5 @@ class ArtworkController extends Controller
         $artwork->delete();
 
         return response()->json(['message' => 'Artwork deleted']);
-    }
-
-    // Nested route: /artworks/{id}/images
-    public function images($id)
-    {
-        $artwork = Artwork::findOrFail($id);
-
-        if (method_exists($artwork, 'images')) {
-            return $artwork->images;
-        }
-
-        return []; // ako ne postoji relacija
     }
 }
