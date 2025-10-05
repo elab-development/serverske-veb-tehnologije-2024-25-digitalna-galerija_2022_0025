@@ -9,6 +9,7 @@ use App\Http\Controllers\ImageController;
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::get('/broj-radova', [ArtworkController::class, 'brojRadovaPoKorisniku']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -18,4 +19,3 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('images', [ImageController::class, 'index']);
     Route::delete('images/{id}', [ImageController::class, 'destroy']);
 });
-

@@ -6,6 +6,8 @@ use App\Models\Artwork;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+
 
 class ArtworkController extends Controller
 {
@@ -171,4 +173,22 @@ class ArtworkController extends Controller
 
         return response()->json(['message' => 'Artwork deleted']);
     }
+
+
+
+
+
+    //za bazu za SQL zahtev
+    public function brojRadovaPoKorisniku()
+    {
+        $rezultat = DB::table('artworks')
+            ->select('user_id', DB::raw('COUNT(*) as broj_radova'))
+            ->groupBy('user_id')
+            ->get();
+
+        return response()->json($rezultat);
+    }
+
+
+
 }
