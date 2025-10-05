@@ -161,4 +161,16 @@ class ArtworkController extends Controller
 
         return response()->json(['message' => 'Artwork deleted']);
     }
+
+    // Nested route: /artworks/{id}/images
+    public function images($id)
+    {
+        $artwork = Artwork::findOrFail($id);
+
+        if (method_exists($artwork, 'images')) {
+            return $artwork->images;
+        }
+
+        return []; // ako ne postoji relacija
+    }
 }
