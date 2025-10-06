@@ -17,9 +17,9 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::table('artworks', function (Blueprint $table) {
-            $table->text('naziv')->change();
-        });
+        #Schema::table('artworks', function (Blueprint $table) {
+            #$table->text('naziv')->change();
+        #});
     }
 
     public function down(): void
